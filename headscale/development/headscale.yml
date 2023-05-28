@@ -1,0 +1,10 @@
+- name: Playbook for headscale
+  hosts: headscale
+  vars:
+    headscale_base_domain: headscale.ettoreciarcia.com
+    
+  # vars_files:
+  #   - '../../secrets/development/postgres.yaml'
+  roles:
+    - role: headscale
+  
