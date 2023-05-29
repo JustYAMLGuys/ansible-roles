@@ -1,0 +1,14 @@
+---
+- name: Install Tailscale Client
+  hosts: tailscale
+  become: true
+
+  tasks:
+    - name: Use Headscale
+      ansible.builtin.include_role:
+        name: artis3n.tailscale
+      vars:
+        tailscale_args: "--login-server='http://headscale.justyamlguys.com:8080/' --accept-routes"
+        tailscale_up_skip: true
+        release_stability: stable
+        state: latest

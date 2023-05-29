@@ -1,0 +1,7 @@
+[ts_client]
+tailscale ansible_host=<your tailscale client server IP or DNS>
+
+[all:vars]
+#ansible_user=root
+ansible_user=ubuntu
+ansible_python_interpreter=python3
