@@ -1,12 +1,15 @@
 ---
-- block:
+- name: Set up Headscale
+  become: "{{ headscale_become }}"
+  become_user: "{{ headscale_become_user }}"
+  block:
 
-    - name: ensure headscale group exits
+    - name: Ensure headscale group exits
       ansible.builtin.group:
         name: headscale
         system: true
 
-    - name: ensure headscale user exists and has restrictive settings
+    - name: Ensure headscale user exists and has restrictive settings
       ansible.builtin.user:
         name: headscale
         groups: headscale
@@ -15,7 +18,7 @@
         system: true
         shell: /usr/sbin/nologin
 
-    - name: ensure that the directory where we deploy headscale exists
+    - name: Ensure that the directory where we deploy headscale exists
       ansible.builtin.file:
         path: "{{ headscale_dir }}"
         state: directory
@@ -23,13 +26,15 @@
         group: headscale
         mode: "0750"
 
-    - name: download headscale in {{ headscale_dir }}
+    - name: Download headscale in {{ headscale_dir }}
       ansible.builtin.get_url:
         url: "{{ headscale_download_url }}"
         dest: "{{ headscale_dir }}"
         checksum: "sha256:{{ headscale_tarball_sha256 }}"
+        mode: "0750"
+      changed_when: false
 
-    - name: rename headscale binary in {{ headscale_dir }}
+    - name: Copy headscale binary to {{ headscale_dir }}/headscale
       ansible.builtin.copy:
         src: "{{ headscale_dir }}/{{ headscale_binary }}"
         dest: "{{ headscale_dir }}/headscale"
@@ -38,12 +43,13 @@
         group: headscale
         mode: "0750"
 
-    - name: remove original downloaded headscale binary
+    - name: Remove original downloaded headscale binary
       ansible.builtin.file:
         path: "{{ headscale_dir }}/{{ headscale_binary }}"
         state: absent
+      changed_when: false
 
-    - name: ensure that the directory for headscale configuration exists
+    - name: Ensure that the directory for headscale configuration exists
       ansible.builtin.file:
         path: /etc/headscale
         state: directory
@@ -51,42 +57,45 @@
         group: headscale
         mode: "0750"
 
-    - name: ensure that the headscale SQLite database exists
+    - name: Ensure that the headscale SQLite database exists
       ansible.builtin.file:
         path: /var/lib/headscale/db.sqlite
         state: touch
         owner: headscale
         group: headscale
         mode: "0750"
+        modification_time: preserve
+        access_time: preserve
 
-    - name: set headscale config file
+    - name: Set headscale config file
       ansible.builtin.template:
         src: templates/etc/headscale/config.yaml.j2
         dest: /etc/headscale/config.yaml
         owner: headscale
         group: headscale
-        mode: 0640
+        mode: '0640'
       notify: systemctl restart headscale
 
-    - name: install headscale systemd unit file
+    - name: Install headscale systemd unit file
       ansible.builtin.template:
         src: etc/systemd/system/headscale.service.j2
         dest: /etc/systemd/system/headscale.service
+        mode: "0640"
       notify:
         - systemctl daemon-reload
 
-    - name: systemctl enable headscale
+    - name: Systemctl enable headscale
       ansible.builtin.systemd:
         name: headscale
         enabled: true
 
-    - name: ensure headscale is running
+    - name: Ensure headscale is running
       ansible.builtin.systemd:
         name: headscale
         state: started
 
-    - name: wait for headscale to be ready
-      wait_for:
+    - name: Wait for headscale to be ready
+      ansible.builtin.wait_for:
         host: localhost
         port: 8080
         delay: 5
@@ -95,7 +104,7 @@
       until: headscale_ready is succeeded
       retries: 60
 
-    - name: move headscale binary to /usr/bin
+    - name: Move headscale binary to /usr/bin
       ansible.builtin.copy:
         src: "{{ headscale_dir }}/headscale"
         dest: /usr/bin/headscale
@@ -103,6 +112,3 @@
         owner: root
         group: root
         mode: "0755"
-
-  become: "{{ headscale_become }}"
-  become_user: "{{ headscale_become_user }}"

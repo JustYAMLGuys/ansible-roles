@@ -24,5 +24,5 @@ Install and configure [headscale](https://github.com/juanfont/headscale).
   vars:
     headscale_base_domain: headscale.example.org
   roles:
-    - eriol.kit.headscale
+    - justyamlguys.headscale
 ```
