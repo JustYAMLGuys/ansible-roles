@@ -1,0 +1,27 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Update apt cache.
+      apt: update_cache=yes cache_valid_time=600
+      when: ansible_os_family == 'Debian'
+
+  roles:
+    - role: headscale
+      vars:
+        client_secret_vault: !vault |
+            $ANSIBLE_VAULT;1.1;AES256
+            63396339643131653262663130366635636663376137613832373730363631363233306238653366
+            3465316630613135303834373435326466313536333635610a616234333230396362333334653136
+            38656431313166646231646332346361353131646363303264636232643635626330623635333436
+            6262623464306465310a336634343132333437656135396164363664666439353532383139353034
+            6662
+        headscale_oidc: |
+          issuer: "https://accounts.google.com"
+          client_id: "41402977056-dhkl1ift6d73i79fpioga4io7096f82s.apps.googleusercontent.com"
+          client_secret: {{ client_secret_vault }}
+          scope: ["openid", "profile", "email"]
+          allowed_users:
+            - steven001@gmail.com
