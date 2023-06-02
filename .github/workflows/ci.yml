@@ -26,10 +26,12 @@ jobs:
 
       - name: Install test dependencies.
         run: pip3 install ansible podman molecule[podman] molecule-plugins[podman]
+      - name: Save vault password to file
+        run: echo "${{ secrets.ANSIBLE_VAULT }}" > ./.ansible_vault
 
       - name: Run Molecule tests.
         working-directory: ${{ matrix.role }}
-        run: molecule test
+        run: molecule test -s headscale
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'

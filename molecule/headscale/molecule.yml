@@ -9,15 +9,22 @@ lint: |
   yamllint .
   ansible-lint
 platforms:
-  - name: instance
+  - name: headscale
     image: "geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2204}-ansible:latest"
     command: ${MOLECULE_DOCKER_COMMAND:-""}
+    network: host
+    published_ports:
+      - 127.0.0.1:8080:8080
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
     privileged: true
     pre_build_image: true
 provisioner:
   name: ansible
+  env:
+    ANSIBLE_ROLES_PATH: "../../roles"
+    ANSIBLE_CONFIG: "../../ansible.cfg"
+    ANSIBLE_VAULT_PASSWORD_FILE: .ansible_vault
   playbooks:
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
   config_options:

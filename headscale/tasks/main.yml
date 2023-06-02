@@ -37,7 +37,7 @@
     - name: Copy headscale binary to {{ headscale_dir }}/headscale
       ansible.builtin.copy:
         src: "{{ headscale_dir }}/{{ headscale_binary }}"
-        dest: "{{ headscale_dir }}/headscale"
+        dest: /usr/bin/headscale
         remote_src: true
         owner: headscale
         group: headscale
@@ -67,6 +67,14 @@
         modification_time: preserve
         access_time: preserve
 
+    - name: Install headscale systemd unit file
+      ansible.builtin.template:
+        src: etc/systemd/system/headscale.service.j2
+        dest: /etc/systemd/system/headscale.service
+        mode: "0640"
+      notify:
+        - systemctl daemon-reload
+
     - name: Set headscale config file
       ansible.builtin.template:
         src: templates/etc/headscale/config.yaml.j2
@@ -75,14 +83,6 @@
         group: headscale
         mode: '0640'
       notify: systemctl restart headscale
-
-    - name: Install headscale systemd unit file
-      ansible.builtin.template:
-        src: etc/systemd/system/headscale.service.j2
-        dest: /etc/systemd/system/headscale.service
-        mode: "0640"
-      notify:
-        - systemctl daemon-reload
 
     - name: Systemctl enable headscale
       ansible.builtin.systemd:
@@ -103,12 +103,3 @@
       register: headscale_ready
       until: headscale_ready is succeeded
       retries: 60
-
-    - name: Move headscale binary to /usr/bin
-      ansible.builtin.copy:
-        src: "{{ headscale_dir }}/headscale"
-        dest: /usr/bin/headscale
-        remote_src: true
-        owner: root
-        group: root
-        mode: "0755"
