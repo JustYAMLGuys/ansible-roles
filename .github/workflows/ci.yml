@@ -10,10 +10,6 @@ jobs:
   molecule:
     name: Molecule
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        role:
-          - headscale
 
     steps:
       - name: Check out the codebase.
@@ -24,13 +20,22 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v36
+
       - name: Install test dependencies.
-        run: pip3 install ansible podman molecule[podman] molecule-plugins[podman]
+        run: pip3 install ansible podman molecule molecule-plugins[podman]
+
       - name: Save vault password to file
         run: echo "${{ secrets.ANSIBLE_VAULT }}" > ./.ansible_vault
 
-      - name: Run Molecule tests.
-        run: molecule test -s headscale
+      - name: Run Molecule tests
+        run: |
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            [[ -d molecule/${file%%/*} ]] && echo ${file%%/*}
+            [[ $file == molecule/* ]] && test -d $(awk -F'/' '{print $(NF-1)}' <<< $file) && echo $_
+          done | sort -u | xargs -r molecule test -s
         env:
           PY_COLORS: '1'
           ANSIBLE_FORCE_COLOR: '1'
